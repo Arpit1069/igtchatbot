@@ -18,8 +18,13 @@ load_dotenv()
 # Set environment variables
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-
+gcp_key_json = os.getenv("GCP_KEY_JSON")
+if gcp_key_json:
+    with open("vertex_key.json", "w") as f:
+        f.write(gcp_key_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+else:
+    print("⚠️ GCP_KEY_JSON not found. Vertex AI might fail without it.")
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "your-secret-key-here")
 CORS(app)
