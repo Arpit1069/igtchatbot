@@ -22,7 +22,8 @@ gcp_key_json = os.getenv("GCP_KEY_JSON")
 if gcp_key_json:
     with open("vertex_key.json", "w") as f:
         f.write(gcp_key_json)
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "vertex_key.json"
+
 else:
     print("⚠️ GCP_KEY_JSON not found. Vertex AI might fail without it.")
 app = Flask(__name__)
@@ -46,7 +47,7 @@ def get_llm(model_choice):
         credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         if not credentials_path:
             raise ValueError("Google credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS in your .env file.")
-        return VertexAI(model_name="gemini-1.5-flash", temperature=0, location="us-east4")
+        return VertexAI(model_name="gemini-2.0-flash", temperature=0, location="us-east4")
     
     elif model_choice == "Gemini":
         api_key = os.environ.get("GOOGLE_API_KEY")
