@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎯 Smart Sales Bot</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #0d0d1a; /* Very dark background from the sample image */
+        min-height: 100vh;
+        overflow-x: hidden;
+        color: #e0e0e0; /* Light grey for general text */
+      }
+
+      /* Header */
+      .header {
+        background: rgba(
+          13,
+          13,
+          26,
+          0.9
+        ); /* Slightly transparent dark background */
+        backdrop-filter: blur(5px);
+        padding: 15px 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        z-index: 100;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo h1 {
+        color: #ffffff; /* White logo text */
+        font-size: 1.8em;
+      }
+
+      .header-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        background: #1a1a33; /* Darker button background */
+        color: #e0e0e0; /* Light grey text */
+        border: 1px solid #2a2a47; /* Subtle border */
+      }
+
+      .btn:hover {
+        background: #2a2a47; /* Lighter dark on hover */
+        transform: translateY(-2px);
+      }
+
+      .btn.primary {
+        background: linear-gradient(
+          135deg,
+          #4a77e5 0%,
+          #7d5be0 100%
+        ); /* Blue-purple gradient */
+        color: white;
+      }
+
+      .btn.success {
+        background: #28a745; /* Green can remain for success, or pick a teal/cyan */
+        color: white;
+      }
+
+      .select {
+        padding: 10px;
+        border: 1px solid #2a2a47;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #1a1a33; /* Darker select background */
+        color: #e0e0e0; /* Light grey text */
+      }
+
+      /* Main Content */
+      .main-content {
+        padding: 30px;
+        min-height: calc(100vh - 80px);
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto 1fr;
+        gap: 25px;
+        height: calc(100vh - 140px);
+      }
+
+      .stats-overview {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+      }
+
+      .stat-card {
+        background: #1a1a33; /* Dark background similar to main content in sample */
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-card .icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        display: block;
+        /* Icon colors can be adjusted to blue/cyan shades if desired */
+        color: #6495ed; /* A medium blue for icons */
+      }
+
+      .stat-card .value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #e0e0e0; /* Light grey value text */
+        margin-bottom: 5px;
+      }
+
+      .stat-card .label {
+        color: #a0a0a0; /* Slightly darker grey label text */
+        font-size: 0.9em;
+      }
+
+      .chart-container {
+        background: #1a1a33; /* Dark background for chart containers */
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        height: 400px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-content {
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        justify-content: space-between; /* ✅ Ensures spacing between chart & legend */
+        padding: 0 20px;
+      }
+
+      .chart-canvas-wrapper {
+        flex-basis: 70%;
+        min-width: 0;
+        height: 300px; /* ✅ Add fixed height */
+        position: relative;
+      }
+
+      .chart-container h3 {
+        margin-bottom: 20px;
+        color: #ffffff; /* White headings */
+        text-align: center;
+      }
+
+      .data-preview {
+        height: 300px;
+        grid-column: 1 / -1;
+        background: #1a1a33; /* Dark background for data preview */
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .data-preview h3 {
+        margin-bottom: 0px;
+        color: #ffffff; /* White headings */
+        display: flex;
+        align-items: center;
+        gap: 0px;
+      }
+
+      .table-container {
+        overflow: auto;
+        max-height: 400px;
+        border-radius: 8px;
+        border: 1px solid #2a2a47; /* Darker border */
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #2a2a47; /* Darker border */
+        color: #e0e0e0; /* Light grey text for table */
+      }
+
+      .data-table th {
+        background: #23233b; /* Slightly lighter dark header background */
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .data-table tr:hover {
+        background: rgba(74, 119, 229, 0.1); /* Subtle blue hover effect */
+      }
+
+      /* Chatbot Toggle */
+      .chatbot-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 30px;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(
+          135deg,
+          #4a77e5 0%,
+          #7d5be0 100%
+        ); /* Blue-purple gradient */
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s;
+        z-index: 1000;
+      }
+
+      .chatbot-toggle:hover {
+        transform: scale(1.1);
+      }
+
+      /* Sliding Chatbot */
+      .chatbot-panel {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100vh;
+        background: rgba(
+          13,
+          13,
+          26,
+          0.95
+        ); /* Dark background with transparency */
+        backdrop-filter: blur(10px);
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
+        transition: right 0.3s ease-in-out;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+      }
+      canvas {
+        width: 90% !important;
+        height: 90% !important;
+      }
+
+      .chatbot-panel.open {
+        right: 0;
+      }
+
+      .chatbot-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Lighter border */
+        background: linear-gradient(
+          135deg,
+          #4a77e5 0%,
+          #7d5be0 100%
+        ); /* Blue-purple gradient */
+        color: white;
+      }
+
+      .chatbot-header h3 {
+        margin-bottom: 10px;
+      }
+
+      .chatbot-config {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .config-group {
+        margin-bottom: 15px;
+      }
+
+      .config-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #e0e0e0; /* Light grey label text */
+      }
+
+      .chat-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        padding-bottom: 80px; /* ✅ Added padding to prevent overlap with close button */
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 180px auto;
+      }
+
+      .message {
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 15px;
+        max-width: 85%;
+        word-wrap: break-word;
+        animation: fadeIn 0.3s ease-in;
+      }
+
+      .message.user {
+        background: linear-gradient(
+          135deg,
+          #4a77e5 0%,
+          #7d5be0 100%
+        ); /* Blue-purple gradient */
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+      }
+
+      .message.assistant {
+        background: #1a1a33; /* Darker assistant message background */
+        color: #e0e0e0; /* Light grey text */
+        border-bottom-left-radius: 5px;
+        border-left: 4px solid #7d5be0; /* Purple border */
+        backdrop-filter: blur(3px);
+      }
+
+      .chat-input-container {
+        padding: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        width: 80%;
+      }
+
+      .chat-input-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      .chat-input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #2a2a47; /* Subtle border */
+        border-radius: 20px;
+        outline: none;
+        background: #0d0d1a; /* Very dark input background */
+        color: #e0e0e0; /* Light grey text */
+      }
+
+      .chat-send-btn {
+        background: linear-gradient(
+          135deg,
+          #4a77e5 0%,
+          #7d5be0 100%
+        ); /* Blue-purple gradient */
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        margin-right: -20px;
+      }
+
+      .status-indicator {
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .status-indicator.success {
+        background: #218838; /* Darker green for success */
+        color: #d4edda;
+      }
+
+      .status-indicator.error {
+        background: #dc3545; /* Darker red for error */
+        color: #f8d7da;
+      }
+
+      .status-indicator.info {
+        background: #17a2b8; /* Darker blue for info */
+        color: #d1ecf1;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(74, 119, 229, 0.3);
+        border-radius: 50%;
+        border-top-color: #4a77e5;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .chatbot-panel {
+          width: 100%;
+          right: -100%;
+        }
+
+        .main-content {
+          padding: 15px;
+        }
+
+        .header {
+          padding: 10px 15px;
+        }
+
+        .header h1 {
+          font-size: 1.4em;
+        }
+      }
+      .column-pill {
+        background: rgba(74, 119, 229, 0.2);
+        color: #b3e0ff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(74, 119, 229, 0.5);
+        font-size: 0.85em;
+        white-space: nowrap;
+      }
+      .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: rgba(255, 255, 255, 0.9); /* Slightly lighter no data text */
+      }
+      /* Insight Builder Styles */
+      .insight-builder {
+        padding: 20px;
+      }
+
+      .insight-subtitle {
+        color: #a0a0a0;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+      }
+
+      .insight-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .control-group label {
+        color: #b3e0ff;
+        font-size: 0.85em;
+        font-weight: 500;
+      }
+
+      .insight-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+      }
+
+      .query-preview {
+        background: rgba(26, 26, 51, 0.7);
+        border-left: 3px solid #4a77e5;
+        padding: 12px;
+        color: #ffffff;
+        font-style: italic;
+        border-radius: 4px;
+        margin-top: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .query-preview::before {
+        content: "Query Preview:";
+        display: block;
+        color: #a0a0a0;
+        font-size: 0.8em;
+        margin-bottom: 5px;
+        font-style: normal;
+      }
+      /* Example Questions Styles */
+      .example-questions {
+        padding: 20px;
+      }
+
+      .question-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .question-card {
+        background: rgba(26, 26, 51, 0.7);
+        border: 1px solid #2a2a47;
+        border-radius: 10px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .question-card:hover {
+        background: rgba(74, 119, 229, 0.2);
+        transform: translateY(-3px);
+        border-color: #4a77e5;
+      }
+
+      .question-card i {
+        font-size: 1.2em;
+        color: #4a77e5;
+        margin-top: 2px;
+      }
+
+      .question-text {
+        color: #e0e0e0;
+        font-size: 0.85em;
+        line-height: 1.2;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .question-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .insight-controls {
+          grid-template-columns: 1fr;
+        }
+
+        .insight-actions {
+          flex-direction: column;
+        }
+      }
+      .no-data i {
+        font-size: 4em;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .no-data h3 {
+        margin-bottom: 15px;
+        font-size: 1.5em;
+      }
+
+      .no-data p {
+        margin-bottom: 25px;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-chart-line"></i>
+        <h1>Smart Sales Bot</h1>
+      </div>
+      <div class="header-controls">
+        <select id="modelSelect" class="select">
+          <option value="OpenAI">OpenAI GPT</option>
+          <option value="VertexAI">Google VertexAI</option>
+          <option value="Gemini">Google Gemini</option>
+        </select>
+        <button id="loadDataBtn" class="btn success">
+          <i class="fas fa-upload"></i> Load Data
+        </button>
+        <button id="initializeBtn" class="btn primary">
+          <i class="fas fa-robot"></i> Initialize AI
+        </button>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div id="noDataScreen" class="no-data">
+        <i class="fas fa-database"></i>
+        <h3>Welcome to Lane Analytics Dashboard</h3>
+        <p>
+          Load your supermarket sales data to get started with intelligent
+          analytics
+        </p>
+        <button
+          class="btn success"
+          onclick="document.getElementById('loadDataBtn').click()"
+        >
+          <i class="fas fa-upload"></i> Load Dataset
+        </button>
+      </div>
+
+      <div id="dashboardContent" class="dashboard-grid" style="display: none">
+        <div class="stats-overview">
+          <div class="stat-card">
+            <i class="fas fa-dollar-sign icon" style="color: #28a745"></i>
+            <div class="value" id="totalSales">$0</div>
+            <div class="label">Total Sales</div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-shopping-cart icon" style="color: #17a2b8"></i>
+            <div class="value" id="totalTransactions">0</div>
+            <div class="label">Total Transactions</div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-calendar-day icon" style="color: #ffc107"></i>
+            <div class="value" id="avgSalesPerDay">$0</div>
+            <div class="label">Avg Sales/Day</div>
+          </div>
+
+          <div class="stat-card">
+            <i class="fas fa-star icon" style="color: #fd7e14"></i>
+            <div class="value" id="avgRating">0</div>
+            <div class="label">Avg Rating</div>
+          </div>
+        </div>
+        <!-- 🧠 Enhanced Insight Builder -->
+        <!-- Replace the existing Insight Builder div with this -->
+        <div class="chart-container insight-builder">
+          <h3><i class="fas fa-magic"></i> Insight Builder</h3>
+          <p class="insight-subtitle">Build your custom data question</p>
+
+          <div class="insight-controls">
+            <div class="control-group">
+              <label>Metric</label>
+              <select id="metricSelect" class="select">
+                <option value="Total Sales">Total Sales</option>
+                <option value="Average Rating">Average Rating</option>
+                <option value="Gross Margin">Gross Margin</option>
+                <option value="Total Transactions">Total Transactions</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>By</label>
+              <select id="dimensionSelect" class="select">
+                <option value="City">City</option>
+                <option value="Product Line">Product Line</option>
+                <option value="Payment Method">Payment Method</option>
+                <option value="Gender">Gender</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>Time Period</label>
+              <select id="timeSelect" class="select">
+                <option value="all time">All Time</option>
+                <option value="the last 7 days">Last 7 Days</option>
+                <option value="weekends only">Weekends Only</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>Branch</label>
+              <select id="branchSelect" class="select">
+                <option value="">All Branches</option>
+                <option value="A">Branch A</option>
+                <option value="B">Branch B</option>
+                <option value="C">Branch C</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>Payment</label>
+              <select id="paymentSelect" class="select">
+                <option value="">All Payments</option>
+                <option value="Cash">Cash</option>
+                <option value="Credit card">Credit Card</option>
+                <option value="Ewallet">Ewallet</option>
+              </select>
+            </div>
+            <div class="insight-actions">
+              <button class="btn primary" onclick="sendInsightQuery(true)">
+                <i class="fas fa-search"></i> Ask AI
+              </button>
+            </div>
+          </div>
+
+          <div id="previewQuery" class="query-preview"></div>
+        </div>
+        <div class="chart-container" style="height: auto; min-height: 150px">
+          <h3><i class="fas fa-columns"></i> Dataset Columns</h3>
+          <span
+              id="dataInfo"
+              style="font-size: 0.0em; color: #666; font-weight: normal"
+            ></span>
+          <div
+            id="columnNamesContainer"
+            style="display: flex; flex-wrap: wrap; gap: 8px; padding: 10px"
+          ></div>
+          
+            <h3><i class="fas fa-lightbulb"></i> Try Asking...</h3>
+            <div class="question-grid">
+              <div class="question-card" onclick="useExampleQuestion(this)">
+                <i class="fas fa-chart-line"></i>
+                <div class="question-text">
+                  What are the sales trends over time?
+                </div>
+              </div>
+              <div class="question-card" onclick="useExampleQuestion(this)">
+                <i class="fas fa-map-marker-alt"></i>
+                <div class="question-text">
+                  Which city has the highest gross income?
+                </div>
+              </div>
+              <div class="question-card" onclick="useExampleQuestion(this)">
+                <i class="fas fa-venus-mars"></i>
+                <div class="question-text">
+                  How does purchasing behavior differ by gender?
+                </div>
+              </div>
+              <div class="question-card" onclick="useExampleQuestion(this)">
+                <i class="fas fa-credit-card"></i>
+                <div class="question-text">
+                  What's the most popular payment method?
+                </div>
+              </div>
+            </div>
+          
+        </div>
+         <div class="data-preview">
+          <div
+            id="columnNamesDisplay"
+            style="margin-bottom: 10px; color: #b3e0ff; font-size: 0.95em"
+          ></div>
+          <div class="table-container">
+            <table class="data-table" id="dataTable">
+              <thead id="tableHeader"></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div> 
+        <div class="chart-container">
+          <h3><i class="fas fa-chart-pie"></i> Sales by Product Line</h3>
+          <div class="chart-content">
+            <div class="chart-canvas-wrapper">
+              <canvas id="productChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="grossMarginChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3><i class="fas fa-map-marker-alt"></i> Sales by City</h3>
+          <canvas id="cityChart" height="500"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3><i class="fas fa-chart-line"></i> Time Series Sales</h3>
+          <canvas id="timeSeriesChart"></canvas>
+        </div>
+        
+      </div>
+      
+    </div>
+    
+    <button class="chatbot-toggle" id="chatbotToggle">
+      <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="chatbot-panel" id="chatbotPanel">
+      <div
+        class="chatbot-header"
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          padding: 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background: linear-gradient(135deg, #4a77e5 0%, #7d5be0 100%);
+          color: white;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div>
+            <h3 style="margin-bottom: 0">
+              <i class="fas fa-robot"></i> Ask JulieAnne
+            </h3>
+            <p style="margin: 0">
+              Ask me anything about Supermarket Sales data!
+            </p>
+          </div>
+          <img
+            src="/static/images/igtlogo.png"
+            alt="Company Logo"
+            style="
+              height: 80px;
+              width: 80px;
+              padding: 2px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+              object-fit: cover;
+              margin-left: 16px;
+            "
+          />
+        </div>
+      </div>
+
+      <div class="chatbot-config">
+        <div id="systemStatus" class="status-indicator info">
+          Initializing...
+        </div>
+        <div class="config-group">
+          <button id="clearChatBtn" class="btn" style="width: 100%">
+            <i class="fas fa-trash"></i> Clear Chat
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-container" id="chatContainer">
+        <div class="loading" id="loadingIndicator">
+          <div class="spinner"></div>
+          <p>Processing...</p>
+        </div>
+      </div>
+
+      <div class="chat-input-container">
+        <div class="chat-input-group">
+          <input
+            type="text"
+            id="chatInput"
+            class="chat-input"
+            placeholder="Ask about your data..."
+            disabled
+          />
+
+          <button id="chatSendBtn" class="chat-send-btn" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class AnalyticsDashboard {
+        constructor() {
+          this.data = null;
+          this.charts = {};
+          this.initializeElements();
+          this.bindEvents();
+          this.checkStatus();
+        }
+
+        initializeElements() {
+          this.noDataScreen = document.getElementById("noDataScreen");
+          this.dashboardContent = document.getElementById("dashboardContent");
+          this.dataInfo = document.getElementById("dataInfo");
+          this.dataTable = document.getElementById("dataTable");
+          this.tableHeader = document.getElementById("tableHeader");
+          this.tableBody = document.getElementById("tableBody");
+
+          this.loadDataBtn = document.getElementById("loadDataBtn");
+          this.initializeBtn = document.getElementById("initializeBtn");
+          this.modelSelect = document.getElementById("modelSelect");
+
+          this.chatbotToggle = document.getElementById("chatbotToggle");
+          this.chatbotPanel = document.getElementById("chatbotPanel");
+          this.chatContainer = document.getElementById("chatContainer");
+          this.chatInput = document.getElementById("chatInput");
+          this.chatSendBtn = document.getElementById("chatSendBtn");
+          this.clearChatBtn = document.getElementById("clearChatBtn");
+          this.systemStatus = document.getElementById("systemStatus");
+          this.loadingIndicator = document.getElementById("loadingIndicator");
+
+          this.statElements = {
+            totalSales: document.getElementById("totalSales"),
+            totalTransactions: document.getElementById("totalTransactions"),
+            avgSalesPerDay: document.getElementById("avgSalesPerDay"),
+            avgRating: document.getElementById("avgRating"),
+          };
+        }
+
+        bindEvents() {
+          this.loadDataBtn.addEventListener("click", () => this.loadData());
+          this.initializeBtn.addEventListener("click", () =>
+            this.initializeModel()
+          );
+          this.chatbotToggle.addEventListener("click", () =>
+            this.toggleChatbot()
+          );
+          this.clearChatBtn.addEventListener("click", () => this.clearChat());
+          this.chatSendBtn.addEventListener("click", () => this.sendMessage());
+          this.chatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              this.sendMessage();
+            }
+          });
+        }
+
+        async checkStatus() {
+          try {
+            const response = await fetch("/api/status");
+            const data = await response.json();
+            this.updateSystemStatus(data);
+
+            if (data.data_loaded) {
+              await this.loadDashboardData();
+              if (data.model_initialized) this.enableChat();
+            }
+          } catch (error) {
+            console.error("Status check failed:", error);
+          }
+        }
+
+        updateSystemStatus(status) {
+          let text = `📊 Data: ${
+            status.data_loaded ? "✅" : "❌"
+          } | 🤖 Model: ${status.model_initialized ? "✅" : "❌"}`;
+          if (status.current_model) text += ` (${status.current_model})`;
+          this.systemStatus.textContent = text;
+          this.systemStatus.className = `status-indicator ${
+            status.data_loaded && status.model_initialized ? "success" : "info"
+          }`;
+        }
+
+        toggleChatbot(forceClose = false) {
+          const isOpen = this.chatbotPanel.classList.contains("open");
+          if (isOpen || forceClose) {
+            this.chatbotPanel.classList.remove("open");
+            this.chatbotToggle.classList.remove("active");
+            this.chatbotToggle.innerHTML = '<i class="fas fa-robot"></i>';
+          } else {
+            this.chatbotPanel.classList.add("open");
+            this.chatbotToggle.classList.add("active");
+            this.chatbotToggle.innerHTML = '<i class="fas fa-times"></i>';
+            this.loadMessages();
+          }
+        }
+
+        async loadData() {
+          this.setButtonState(this.loadDataBtn, true, "Loading...");
+          try {
+            const response = await fetch("/api/load_data", { method: "POST" });
+            const data = await response.json();
+            if (data.success) {
+              await this.loadDashboardData();
+              this.showSuccess("Data loaded successfully!");
+            } else {
+              this.showError(data.message);
+            }
+          } catch (error) {
+            this.showError("Failed to load data: " + error.message);
+          } finally {
+            this.setButtonState(
+              this.loadDataBtn,
+              false,
+              '<i class="fas fa-upload"></i> Load Data'
+            );
+            this.checkStatus();
+          }
+        }
+
+        async initializeModel() {
+          this.setButtonState(this.initializeBtn, true, "Initializing...");
+          try {
+            const response = await fetch("/api/initialize_model", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ model: this.modelSelect.value }),
+            });
+            const data = await response.json();
+            if (data.success) {
+              this.enableChat();
+              this.loadMessages();
+              this.showSuccess("AI model initialized!");
+            } else {
+              this.showError(data.message);
+            }
+          } catch (error) {
+            this.showError("Model init failed: " + error.message);
+          } finally {
+            this.setButtonState(
+              this.initializeBtn,
+              false,
+              '<i class="fas fa-robot"></i> Initialize AI'
+            );
+            this.checkStatus();
+          }
+        }
+
+        async loadDashboardData() {
+          try {
+            const response = await fetch("/api/get_full_data"); // New endpoint
+            const data = await response.json();
+            if (data.success) {
+              this.displayDashboardData(data.data, data.data_info);
+              this.noDataScreen.style.display = "none";
+              this.dashboardContent.style.display = "grid";
+              await this.createCharts(); // Call createCharts after data is loaded
+            } else {
+              console.error("Failed to load full data:", data.message);
+              // Fallback to sample dashboard if full data fails
+              this.generateSampleDashboard();
+            }
+          } catch (error) {
+            console.error("Dashboard load failed:", error);
+            // Fallback to sample dashboard if API call fails
+            this.generateSampleDashboard();
+          }
+        }
+
+        displayDashboardData(data, dataInfo) {
+          // Update stat cards
+          this.statElements.totalSales.textContent = `$${dataInfo.total_sales.toLocaleString(
+            undefined,
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+          )}`;
+          this.statElements.totalTransactions.textContent =
+            dataInfo.total_transactions.toLocaleString();
+          this.statElements.avgSalesPerDay.textContent = `$${dataInfo.avg_sales_per_day.toLocaleString(
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+          )}`;
+          this.statElements.avgRating.textContent =
+            dataInfo.avg_rating.toFixed(2);
+          this.dataInfo.textContent = `(${dataInfo.rows} rows × ${dataInfo.columns} columns)`;
+
+          // Display column names
+          const columnNamesContainer = document.getElementById(
+            "columnNamesContainer"
+          );
+          columnNamesContainer.innerHTML = ""; // Clear previous content
+
+          if (dataInfo.column_names && dataInfo.column_names.length > 0) {
+            dataInfo.column_names.forEach((column) => {
+              const pill = document.createElement("div");
+              pill.className = "column-pill";
+              pill.textContent = column;
+              columnNamesContainer.appendChild(pill);
+            });
+          } else if (data.length > 0) {
+            const columns = Object.keys(data[0]);
+            columns.forEach((column) => {
+              const pill = document.createElement("div");
+              pill.className = "column-pill";
+              pill.textContent = column;
+              columnNamesContainer.appendChild(pill);
+            });
+          } else {
+            columnNamesContainer.innerHTML =
+              "<p style='color:#aaa'>No columns to display</p>";
+          }
+
+          // Populate table
+          if (data.length > 0) {
+            const headers = Object.keys(data[0]);
+            this.tableHeader.innerHTML =
+              "<tr>" + headers.map((h) => `<th>${h}</th>`).join("") + "</tr>";
+            this.tableBody.innerHTML = data
+              .map(
+                (row) =>
+                  "<tr>" +
+                  headers.map((h) => `<td>${row[h]}</td>`).join("") +
+                  "</tr>"
+              )
+              .join("");
+          } else {
+            this.tableHeader.innerHTML = "";
+            this.tableBody.innerHTML =
+              "<tr><td colspan='17'>No data available.</td></tr>";
+          }
+        }
+
+        // This function will now serve as a fallback or for initial display if no data is loaded
+        generateSampleDashboard() {
+          this.statElements.totalSales.textContent = "$32266,9.75";
+          this.statElements.totalTransactions.textContent = "1,000";
+          this.statElements.avgTransaction.textContent = "$322.97";
+          this.statElements.avgRating.textContent = "6.97";
+          this.dataInfo.textContent = "(1000 rows × 17 columns)";
+
+          // Example sample headers
+          const headers = [
+            "Invoice ID",
+            "Branch",
+            "City",
+            "Customer Type",
+            "Gender",
+            "Product Line",
+            "Unit Price",
+            "Quantity",
+            "Tax 5%",
+            "Total",
+            "Date",
+            "Time",
+            "Payment",
+            "COGS",
+            "Gross Margin Percentage",
+            "Gross Income",
+            "Rating",
+          ];
+          document.getElementById("columnNamesDisplay").textContent =
+            "Columns: " + headers.join(", ");
+
+          const rows = [
+            [
+              "750-67-8428",
+              "A",
+              "Yangon",
+              "Member",
+              "Female",
+              "Health and beauty",
+              "74.69",
+              "7",
+              "26.14",
+              "548.97",
+              "1/5/2019",
+              "13:08",
+              "Ewallet",
+              "522.83",
+              "4.76",
+              "26.14",
+              "9.1",
+            ],
+            [
+              "631-41-3108",
+              "A",
+              "Yangon",
+              "Normal",
+              "Male",
+              "Home and lifestyle",
+              "46.33",
+              "7",
+              "16.2155",
+              "340.5255",
+              "3/3/2019",
+              "13:23",
+              "Credit card",
+              "324.31",
+              "4.761904762",
+              "16.2155",
+              "7.4",
+            ],
+            [
+              "123-19-1176",
+              "A",
+              "Yangon",
+              "Member",
+              "Male",
+              "Health and beauty",
+              "58.22",
+              "8",
+              "23.288",
+              "489.048",
+              "1/27/2019",
+              "20:33",
+              "Ewallet",
+              "465.76",
+              "4.761904762",
+              "23.288",
+              "8.4",
+            ],
+            [
+              "373-73-7910",
+              "A",
+              "Yangon",
+              "Normal",
+              "Male",
+              "Sports and travel",
+              "86.31",
+              "7",
+              "30.2085",
+              "634.3785",
+              "2/8/2019",
+              "10:37",
+              "Ewallet",
+              "604.17",
+              "4.761904762",
+              "30.2085",
+              "5.3",
+            ],
+            [
+              "226-31-3081",
+              "C",
+              "Naypyitaw",
+              "Normal",
+              "Female",
+              "Electronic accessories",
+              "15.28",
+              "5",
+              "3.82",
+              "80.22",
+              "3/8/2019",
+              "10:29",
+              "Cash",
+              "76.4",
+              "4.76",
+              "3.82",
+              "9.6",
+            ],
+          ];
+
+          this.tableHeader.innerHTML =
+            "<tr>" + headers.map((h) => `<th>${h}</th>`).join("") + "</tr>";
+          this.tableBody.innerHTML = rows
+            .map(
+              (row) =>
+                "<tr>" +
+                row.map((cell) => `<td>${cell}</td>`).join("") +
+                "</tr>"
+            )
+            .join("");
+          this.createCharts(true); // Pass true to indicate sample data for charts
+        }
+        
+        async createCharts(isSample = false) {
+          if (this.charts.product) this.charts.product.destroy();
+          if (this.charts.city) this.charts.city.destroy();
+          if (this.charts.grossMargin) this.charts.grossMargin.destroy();
+          if (this.charts.timeSeries) this.charts.timeSeries.destroy();
+
+          // --- GROSS MARGIN/GROSS INCOME BY PRODUCT LINE BAR CHART ---
+          if (this.charts.grossMargin) this.charts.grossMargin.destroy();
+          let marginLabels = [];
+          let marginData = [];
+          let marginType = "Gross Margin %";
+          try {
+            // Try gross margin percentage endpoint first
+            let response = await fetch("/api/get_gross_margin_by_product_line");
+            let result = await response.json();
+            if (result.success) {
+              marginLabels = result.labels;
+              marginData = result.data;
+              marginType = result.label || "Gross Margin %";
+            } else {
+              // Fallback to gross income endpoint
+              response = await fetch("/api/get_gross_income_by_product_line");
+              result = await response.json();
+              if (result.success) {
+                marginLabels = result.labels;
+                marginData = result.data;
+                marginType = result.label || "Gross Income";
+              } else {
+                throw new Error(
+                  result.message || "No gross margin/income data available"
+                );
+              }
+            }
+            const ctx = document
+              .getElementById("grossMarginChart")
+              .getContext("2d");
+            this.charts.grossMargin = new Chart(ctx, {
+              type: "bar",
+              data: {
+                labels: marginLabels,
+                datasets: [
+                  {
+                    label: "Product Line",
+                    data: marginData,
+                    backgroundColor: "#36A2EB",
+                    borderColor: "#1a1a33",
+                    borderWidth: 1,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: {
+                    display: true,
+                    labels: {
+                      color: "#fff",
+                      font: { size: 14, weight: "bold" },
+                    },
+                  },
+                  title: {
+                    display: true,
+                    text: marginType + " by Product Line",
+                    color: "#fff",
+                    font: { size: 18, weight: "bold" },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#fff",
+                      font: { size: 12, weight: "bold" },
+                    },
+                  },
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      color: "#fff",
+                      font: { size: 16, weight: "bold" },
+                    },
+                    title: { display: true, text: marginType, color: "#fff" },
+                  },
+                },
+              },
+            });
+          } catch (err) {
+            console.error("Gross margin/income chart error", err);
+          }
+
+          // --- TIME SERIES CHART ---
+          try {
+            const response = await fetch("/api/get_time_series_sales");
+            const result = await response.json();
+            if (result.success) {
+              const ctx = document
+                .getElementById("timeSeriesChart")
+                .getContext("2d");
+              this.charts.timeSeries = new Chart(ctx, {
+                type: "line",
+                data: {
+                  labels: result.labels,
+                  datasets: [
+                    {
+                      label: "Sales Over Time",
+                      data: result.data,
+                      fill: false,
+                      borderColor: "#4a77e5",
+                      tension: 0.1,
+                    },
+                  ],
+                },
+                options: {
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      labels: {
+                        color: "#fff",
+                        font: { size: 14, weight: "bold" },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: { ticks: { color: "#fff" } },
+                    y: { ticks: { color: "#fff" } },
+                  },
+                },
+              });
+            }
+          } catch (err) {
+            console.error("Time series fetch error", err);
+          }
+          let productLabels = [];
+          let productData = [];
+
+          try {
+            const response = await fetch("/api/get_product_line_sales");
+            const chartData = await response.json();
+            if (chartData.success) {
+              productLabels = chartData.labels;
+              productData = chartData.data;
+            } else {
+              console.error(
+                "Failed to load product chart data:",
+                chartData.message
+              );
+            }
+          } catch (error) {
+            console.error("Error fetching product chart data:", error);
+          }
+
+          const productCtx = document
+            .getElementById("productChart")
+            .getContext("2d");
+          this.charts.product = new Chart(productCtx, {
+            type: "doughnut",
+            data: {
+              labels: productLabels,
+              datasets: [
+                {
+                  data: productData,
+                  backgroundColor: [
+                    "#FF6384",
+                    "#36A2EB",
+                    "#FFCE56",
+                    "#4BC0C0",
+                    "#9966FF",
+                    "#FF9F40",
+                    "#C9CBCF",
+                  ],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              aspectRatio: 1.5, // Optional
+              animation: false,
+              layout: {
+                padding: {
+                  right: 100, // ✅ Adds space between chart and legend
+                },
+              },
+              plugins: {
+                legend: {
+                  position: "right",
+                  align: "center", // Optional: centers legend vertically
+                  labels: {
+                    color: "#ffffff", // ✅ White legends
+                    font: {
+                      size: 14,
+                      weight: "bold",
+                    },
+                    boxWidth: 20,
+                    padding: 20, // ✅ Adds spacing between items
+                  },
+                },
+              },
+            },
+          });
+
+          let cityLabels = [];
+          let cityData = [];
+
+          if (!isSample) {
+            try {
+              const response = await fetch("/api/get_city_sales");
+              const cityChartData = await response.json();
+              if (cityChartData.success) {
+                cityLabels = cityChartData.labels;
+                cityData = cityChartData.data;
+              } else {
+                console.error(
+                  "Failed to load city chart data:",
+                  cityChartData.message
+                );
+                cityLabels = ["Yangon", "Mandalay", "Naypyitaw"];
+                cityData = [1000, 108400, 108300];
+              }
+            } catch (error) {
+              console.error("Error fetching city chart data:", error);
+              cityLabels = ["Yangon", "Mandalay", "Naypyitaw"];
+              cityData = [10200, 108400, 108300];
+            }
+          } else {
+            cityLabels = ["Yangon", "Mandalay", "Naypyitaw"];
+            cityData = [1000, 108400, 108300];
+          }
+
+          const cityCtx = document.getElementById("cityChart").getContext("2d");
+          this.charts.city = new Chart(cityCtx, {
+            type: "bar",
+            data: {
+              labels: cityLabels,
+              datasets: [
+                {
+                  label: "Sales ($)",
+                  data: cityData,
+                  backgroundColor: "rgba(102, 126, 234, 0.8)",
+                  borderColor: "rgba(102, 126, 234, 1)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  ticks: {
+                    color: "#ffffff", // ✅ White X-axis labels
+                    autoSkip: false,
+                    font: {
+                      size: 14, // ✅ Bigger font
+                      weight: "bold",
+                    },
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    color: "#ffffff",
+                    font: {
+                      size: 14, // ✅ Bigger font
+                      weight: "bold",
+                    }, // ✅ White Y-axis labels
+                  },
+                },
+              },
+              plugins: {
+                legend: {
+                  display: true, // ✅ Show legend
+                  labels: {
+                    color: "#ffffff", // ✅ White text
+                    font: {
+                      size: 14, // ✅ Bigger font
+                      weight: "bold",
+                    },
+                    boxWidth: 20,
+                    padding: 20, // ✅ Spacing between legend items
+                  },
+                },
+              },
+            },
+          });
+        }
+
+        async sendMessage() {
+          const message = this.chatInput.value.trim();
+          if (!message) return;
+          this.addMessage("user", message);
+          this.chatInput.value = "";
+          this.showLoading();
+
+          if (message.toLowerCase() === "quit") {
+            this.toggleChatbot(true);
+            return;
+          }
+
+          try {
+            const response = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message }),
+            });
+            const data = await response.json();
+            if (data.success) {
+              this.addMessage("assistant", data.response);
+            } else {
+              this.addMessage("assistant", "❌ Error: " + data.message);
+            }
+          } catch (error) {
+            this.addMessage(
+              "assistant",
+              "❌ Failed to send message: " + error.message
+            );
+          } finally {
+            this.hideLoading();
+          }
+        }
+
+        async loadMessages() {
+          try {
+            const response = await fetch("/api/get_messages");
+            const data = await response.json();
+            this.chatContainer.innerHTML = "";
+            data.messages.forEach((msg) =>
+              this.addMessage(msg.role, msg.content, null, false)
+            );
+          } catch (error) {
+            console.error("Failed to load messages:", error);
+          }
+        }
+
+        async clearChat() {
+          try {
+            await fetch("/api/clear_chat", { method: "POST" });
+            this.chatContainer.innerHTML = "";
+            this.checkStatus();
+          } catch (error) {
+            console.error("Failed to clear chat:", error);
+          }
+        }
+
+        showSuccess(message) {
+          this.systemStatus.className = "status-indicator success";
+          this.systemStatus.textContent = `✅ ${message}`;
+        }
+
+        showError(message) {
+          this.systemStatus.className = "status-indicator error";
+          this.systemStatus.textContent = `❌ ${message}`;
+        }
+
+        setButtonState(button, isLoading, text) {
+          button.disabled = isLoading;
+          button.innerHTML = text;
+        }
+
+        addMessage(role, content, timestamp = null, scroll = true) {
+          const msgDiv = document.createElement("div");
+          msgDiv.className = `message ${role}`;
+          if (role === "assistant") {
+            msgDiv.innerHTML = marked.parse(content);
+          } else {
+            msgDiv.textContent = content;
+          }
+          this.chatContainer.appendChild(msgDiv);
+          if (scroll)
+            this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+        }
+
+        enableChat() {
+          this.chatInput.disabled = false;
+          this.chatSendBtn.disabled = false;
+        }
+
+        showLoading() {
+          this.loadingIndicator.style.display = "block";
+        }
+
+        hideLoading() {
+          this.loadingIndicator.style.display = "none";
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        new AnalyticsDashboard();
+      });
+
+      function sendInsightQuery(autoSend = false) {
+        const metric = document.getElementById("metricSelect").value;
+        const dimension = document.getElementById("dimensionSelect").value;
+        const time = document.getElementById("timeSelect").value;
+        const branch = document.getElementById("branchSelect").value;
+        const payment = document.getElementById("paymentSelect").value;
+
+        let query = `Show me ${metric.toLowerCase()} by ${dimension.toLowerCase()} for ${time.toLowerCase()}`;
+        if (branch) query += ` in Branch ${branch}`;
+        if (payment) query += ` using ${payment}`;
+
+        const previewElement = document.getElementById("previewQuery");
+        previewElement.innerHTML = `
+    <span class="query-text">${query}</span>
+    <div class="query-hint">This will be sent to the AI assistant</div>
+  `;
+
+        const chatInput = document.getElementById("chatInput");
+        chatInput.value = query;
+        chatInput.focus();
+
+        // Auto-open chatbot panel
+        const chatbotPanel = document.getElementById("chatbotPanel");
+        if (!chatbotPanel.classList.contains("open")) {
+          chatbotPanel.classList.add("open");
+          document.getElementById("chatbotToggle").classList.add("active");
+          document.getElementById("chatbotToggle").innerHTML =
+            '<i class="fas fa-times"></i>';
+        }
+
+        // Auto-send message
+        if (autoSend && !chatInput.disabled) {
+          document.getElementById("chatSendBtn").click();
+        }
+      }
+
+      function createChartFromQuery() {
+        const metric = document.getElementById("metricSelect").value;
+        const dimension = document.getElementById("dimensionSelect").value;
+        const time = document.getElementById("timeSelect").value;
+        const branch = document.getElementById("branchSelect").value;
+        const payment = document.getElementById("paymentSelect").value;
+
+        let query = {
+          metric: metric,
+          dimension: dimension,
+          time: time,
+          branch: branch,
+          payment: payment,
+        };
+
+        // Here you would typically make an API call to generate the chart
+        // For now, we'll just show a confirmation
+        const previewElement = document.getElementById("previewQuery");
+        previewElement.innerHTML = `
+    <span class="query-text">Generating ${metric} by ${dimension} chart</span>
+    <div class="query-hint">This would create a visualization of your query</div>
+  `;
+
+        // In a real implementation, you would call your chart generation API here
+        // fetch('/api/generate_chart', { method: 'POST', body: JSON.stringify(query) })
+        //   .then(response => response.json())
+        //   .then(data => {
+        //     // Handle the chart data
+        //   });
+      }
+    </script>
+  </body>
+</html>
