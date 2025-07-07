@@ -23,9 +23,9 @@ if gcp_key_json:
     with open("vertex_key.json", "w") as f:
         f.write(gcp_key_json)
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "vertex_key.json"
-
 else:
     print("⚠️ GCP_KEY_JSON not found. Vertex AI might fail without it.")
+
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "your-secret-key-here")
 CORS(app)
@@ -36,7 +36,7 @@ df_kpis = None
 agents = {}  # Store agents per session
 
 def get_llm(model_choice):
-    """Get the selected language model"""
+    """Get the selected language model with fallback options"""
     if model_choice == "OpenAI":
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
@@ -47,30 +47,29 @@ def get_llm(model_choice):
         credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         if not credentials_path:
             raise ValueError("Google credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS in your .env file.")
-        return VertexAI(model_name="gemini-2.0-flash", temperature=0, location="us-east4")
+        return VertexAI(model_name="gemini-1.0-pro", temperature=0, location="us-east4")
     
     elif model_choice == "Gemini":
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("Google API key not found. Please set GOOGLE_API_KEY in your .env file.")
-        return ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash", 
-            temperature=0.7, 
-            google_api_key=api_key
-        )
+        
+        # Try gemini-1.5-flash first, fall back to 1.0 if needed
+        try:
+            return ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",  # Try the more capable model first
+                temperature=0.7, 
+                google_api_key=api_key
+            )
+        except Exception as e:
+            print(f"Falling back to gemini-1.0-pro due to: {str(e)}")
+            return ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",  # Fallback option
+                temperature=0.7, 
+                google_api_key=api_key
+            )
     else:
         raise ValueError("Unsupported model selected.")
-
-def load_data():
-    """Load the dataset"""
-    global df
-    try:
-        df = pd.read_csv("supermarket_sales_final.csv")
-        return True, f"Data loaded successfully: {len(df):,} rows, {len(df.columns)} columns"
-    except FileNotFoundError:
-        return False, "'supermarket_sales.csv' not found in the project directory."
-    except Exception as e:
-        return False, f"Error loading file: {str(e)}"
 
 def create_agent(model_choice, session_id):
     global df, df_kpis, agents
@@ -82,7 +81,6 @@ def create_agent(model_choice, session_id):
     try:
         llm = get_llm(model_choice)
 
-        # ✅ Use only df for agent — df_kpis is available globally
         agent = create_pandas_dataframe_agent(
             llm,
             df,
@@ -92,7 +90,7 @@ def create_agent(model_choice, session_id):
             return_intermediate_steps=True
         )
 
-        # Inject df_kpis into global scope so it's accessible during agent execution
+        # Inject df_kpis into global scope
         globals()["kpis"] = df_kpis
 
         agents[session_id] = {
@@ -140,34 +138,40 @@ Just ask me anything about your data! 🤖
 """
     return analysis
 
-def get_system_prompt():
-    return (
-        "You are a helpful data assistant.\n"
-        "You have access to two pandas dataframes:\n"
-        "- `df`: supermarket sales data\n"
-        "- `kpis`: key performance indicators from a separate Excel file\n"
-        "Even though the agent was initialized with only `df`, you can access both `df` and `kpis` during execution."
-    )
+def get_agent_response(agent, prompt):
+    """Helper function to get response from agent with standardized prompt"""
+    formatted_prompt = f"""
+You are a helpful data analyst. You must always return your final response after the phrase: `Final Answer:`.
 
+User's query:
+{prompt}
 
+Provide context, trends, statistics, and any relevant analysis. End with:
+Final Answer: <your full response here>
+    """
+    
+    response_raw = agent.invoke({"input": formatted_prompt})
+    
+    if isinstance(response_raw, dict):
+        raw_text = response_raw.get('output') or response_raw.get('result') or str(response_raw)
+    else:
+        raw_text = str(response_raw)
 
-def extract_numerical_answer(response_text):
-    """Extract numerical values from response text and format them properly"""
-    # Look for numbers (including decimals) in the response
-    numbers = re.findall(r'\b\d+\.?\d*\b', response_text)
-    if numbers:
-        # Try to convert to float and format with 2 decimal places
+    match = re.search(r'Final Answer:\s*(.*)', raw_text, re.DOTALL)
+    response = match.group(1).strip() if match else raw_text
+    
+    # Format numbers
+    def round_match(match):
         try:
-            main_number = float(numbers[0])
-            return f"{main_number:.2f}"
-        except ValueError:
-            return numbers[0]
-    return None
+            return f"{float(match.group()):.2f}"
+        except:
+            return match.group()
+    
+    return re.sub(r'(?<![\w-])(\d+\.\d+)(?![\w-])', round_match, response)
 
 @app.route('/')
 def index():
     """Serve the main chat interface"""
-    # Initialize session
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
     if 'messages' not in session:
@@ -176,7 +180,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/api/load_data', methods=['POST'])
-def load_data():
+def api_load_data():
     global df, df_kpis
     try:
         df = pd.read_csv("supermarket_sales_final.csv")
@@ -200,7 +204,6 @@ def api_initialize_model():
     agent, message = create_agent(model_choice, session_id)
     
     if agent:
-        # Add welcome message to session
         welcome_msg = f"👋 **Hello! I'm your Lane Analytics Assistant powered by {model_choice}.**\n\nI've loaded your supermarket sales data and I'm ready to help you analyze it!\n\n{get_initial_analysis()}"
         
         if 'messages' not in session:
@@ -222,7 +225,7 @@ def api_initialize_model():
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    """Handle chat messages with descriptive responses using Final Answer pattern"""
+    """Handle chat messages with model switching capability"""
     data = request.get_json()
     user_message = data.get('message', '').strip()
     session_id = session.get('session_id')
@@ -242,72 +245,55 @@ def api_chat():
         'timestamp': time.time()
     })
 
-    # Simple quick replies
-    greetings = ["hello", "hi", "hey"]
-    thanks = ["thank you", "thanks", "thx"]
-
-    if user_message.lower() in greetings:
-        response = "👋 Hello! I'm your Lane Analytics Assistant. Ask me anything about your supermarket sales data!"
-        viz_suggestion = None
-    elif user_message.lower() in thanks:
-        response = "You're welcome! Let me know if you have more questions about your data."
-        viz_suggestion = None
-    else:
-        try:
-            agent = agents[session_id]['agent']
-
-            # Force the agent to structure the output using Final Answer
-            formatted_prompt = f"""
-You are a helpful data analyst.
-
-You must always return your final response after the phrase: `Final Answer:` (without backticks).
-
-Please answer the user's query in a descriptive and analytical way using the dataset.
-
-User's query:
-{user_message}
-
-Provide context, trends, statistics, and any relevant analysis. End your message with:
-Final Answer: <your full response here>
-            """
-
-            response_raw = agent.invoke({"input": formatted_prompt})
-
-            if isinstance(response_raw, dict):
-                raw_text = response_raw.get('output') or response_raw.get('result') or str(response_raw)
-            else:
-                raw_text = str(response_raw)
-
-            print(f"DEBUG: Raw agent output:\n{raw_text}")
-
-            # Extract just the Final Answer part
-            match = re.search(r'Final Answer:\s*(.*)', raw_text, re.DOTALL)
-            response = match.group(1).strip() if match else raw_text
-
-            # Format numbers
-            def round_match(match):
-                try:
-                    return f"{float(match.group()):.2f}"
-                except:
-                    return match.group()
-            response = re.sub(r'(?<![\w-])(\d+\.\d+)(?![\w-])', round_match, response)
-
-            # Visualization suggestion
-            viz_suggestion = None
+    # Try with current model first
+    current_agent = agents[session_id]['agent']
+    current_model = agents[session_id]['model']
+    
+    try:
+        response = get_agent_response(current_agent, user_message)
+    except Exception as e:
+        print(f"Error with {current_model}: {str(e)}")
+        
+        # If Gemini and token limit error, try switching models
+        if "Gemini" in current_model and ("token" in str(e).lower() or "content" in str(e).lower()):
+            print("Attempting model switch due to token/content limits...")
             try:
-                viz_prompt = f"Based on this question: '{user_message}' and response: '{response}', suggest a chart type (bar/line/pie/scatter/table) and relevant columns. Respond with JSON: {{'chart_type': 'bar', 'columns': ['col1', 'col2'], 'reason': '...'}}"
-                viz_response = agent.invoke({"input": viz_prompt})
-                viz_suggestion = viz_response.get("output") if isinstance(viz_response, dict) else str(viz_response)
-            except Exception as ve:
-                print(f"Visualization suggestion failed: {ve}")
-                viz_suggestion = None
-
-        except Exception as e:
-            print(f"ERROR: {e}")
-            response = "❌ Something went wrong. Please try rephrasing your question."
-            viz_suggestion = None
-
-    # Save assistant message
+                # Switch between Gemini models
+                if "2.5" in current_model:
+                    new_model = "gemini-2.5-flash"
+                else:
+                    new_model = "gemini-2.0-flash"
+                
+                llm = get_llm("Gemini")  # This will automatically try the other model
+                
+                # Recreate agent with new model
+                agent = create_pandas_dataframe_agent(
+                    llm,
+                    df,
+                    verbose=True,
+                    allow_dangerous_code=True,
+                    handle_parsing_errors=True,
+                    return_intermediate_steps=True
+                )
+                
+                # Update agent in session
+                agents[session_id] = {
+                    'agent': agent,
+                    'model': f"Gemini ({llm.model_name})",
+                    'created_at': time.time()
+                }
+                
+                # Retry with new model
+                response = get_agent_response(agent, user_message)
+                
+                # Notify user of model switch
+                response = f"🔁 Switched to {llm.model_name} for better performance\n\n{response}"
+            except Exception as fallback_error:
+                response = f"❌ Error: {str(fallback_error)}"
+        else:
+            response = f"❌ Error: {str(e)}"
+    
+    # Save and return response
     assistant_msg = {
         'role': 'assistant',
         'content': response,
@@ -319,7 +305,7 @@ Final Answer: <your full response here>
         'success': True,
         'response': response,
         'timestamp': assistant_msg['timestamp'],
-        'visualization': viz_suggestion
+        'model': agents[session_id]['model']
     })
 
 @app.route('/api/get_messages', methods=['GET'])
@@ -344,7 +330,6 @@ def api_get_data_summary():
     
     summary = get_initial_analysis()
     
-    # Add to session messages
     if 'messages' not in session:
         session['messages'] = []
     
@@ -360,7 +345,6 @@ def api_get_data_summary():
     })
 
 @app.route('/api/get_full_data', methods=['GET'])
-@app.route('/api/get_full_data', methods=['GET'])
 def api_get_full_data():
     global df
     if df is None:
@@ -368,7 +352,6 @@ def api_get_full_data():
 
     try:
         df['Date'] = pd.to_datetime(df['Date'])  # Ensure proper date type
-
         data_to_send = df.to_dict(orient='records')
 
         # Compute metrics
@@ -376,7 +359,7 @@ def api_get_full_data():
         total_transactions = len(df)
         avg_rating = df['Rating'].mean() if 'Rating' in df.columns else 0
 
-        # ✅ NEW: Average Sales per Day
+        # Average Sales per Day
         daily_sales = df.groupby('Date')['Total'].sum()
         avg_sales_per_day = daily_sales.mean()
 
@@ -492,7 +475,7 @@ def api_get_gross_income_by_product_line():
         return jsonify({'success': False, 'message': 'No data loaded'}), 400
 
     try:
-        # Try to find the correct column for gross income (case-insensitive, flexible)
+        # Try to find the correct column for gross income
         income_col = None
         for col in df.columns:
             if col.strip().lower() in ["gross income", "grossincome", "gross_income"]:

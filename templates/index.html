@@ -744,7 +744,7 @@
             </div>
             <div class="insight-actions">
               <button class="btn primary" onclick="sendInsightQuery(true)">
-                <i class="fas fa-search"></i> Ask AI
+                <i class="fas fa-search"></i> Ask JulieAnne
               </button>
             </div>
           </div>
@@ -754,55 +754,43 @@
         <div class="chart-container" style="height: auto; min-height: 150px">
           <h3><i class="fas fa-columns"></i> Dataset Columns</h3>
           <span
-              id="dataInfo"
-              style="font-size: 0.0em; color: #666; font-weight: normal"
-            ></span>
+            id="dataInfo"
+            style="font-size: 0em; color: #666; font-weight: normal"
+          ></span>
           <div
             id="columnNamesContainer"
             style="display: flex; flex-wrap: wrap; gap: 8px; padding: 10px"
           ></div>
-          
-            <h3><i class="fas fa-lightbulb"></i> Try Asking...</h3>
-            <div class="question-grid">
-              <div class="question-card" onclick="useExampleQuestion(this)">
-                <i class="fas fa-chart-line"></i>
-                <div class="question-text">
-                  What are the sales trends over time?
-                </div>
-              </div>
-              <div class="question-card" onclick="useExampleQuestion(this)">
-                <i class="fas fa-map-marker-alt"></i>
-                <div class="question-text">
-                  Which city has the highest gross income?
-                </div>
-              </div>
-              <div class="question-card" onclick="useExampleQuestion(this)">
-                <i class="fas fa-venus-mars"></i>
-                <div class="question-text">
-                  How does purchasing behavior differ by gender?
-                </div>
-              </div>
-              <div class="question-card" onclick="useExampleQuestion(this)">
-                <i class="fas fa-credit-card"></i>
-                <div class="question-text">
-                  What's the most popular payment method?
-                </div>
+
+          <h3><i class="fas fa-lightbulb"></i> Try Asking...</h3>
+          <div class="question-grid">
+            <div class="question-card" onclick="useExampleQuestion(this)">
+              <i class="fas fa-chart-line"></i>
+              <div class="question-text">
+                What are the sales trends over time?
               </div>
             </div>
-          
-        </div>
-         <div class="data-preview">
-          <div
-            id="columnNamesDisplay"
-            style="margin-bottom: 10px; color: #b3e0ff; font-size: 0.95em"
-          ></div>
-          <div class="table-container">
-            <table class="data-table" id="dataTable">
-              <thead id="tableHeader"></thead>
-              <tbody id="tableBody"></tbody>
-            </table>
+            <div class="question-card" onclick="useExampleQuestion(this)">
+              <i class="fas fa-map-marker-alt"></i>
+              <div class="question-text">
+                Which city has the highest gross income?
+              </div>
+            </div>
+            <div class="question-card" onclick="useExampleQuestion(this)">
+              <i class="fas fa-venus-mars"></i>
+              <div class="question-text">
+                How does purchasing behavior differ by gender?
+              </div>
+            </div>
+            <div class="question-card" onclick="useExampleQuestion(this)">
+              <i class="fas fa-credit-card"></i>
+              <div class="question-text">
+                What's the most popular payment method?
+              </div>
+            </div>
           </div>
-        </div> 
+        </div>
+        
         <div class="chart-container">
           <h3><i class="fas fa-chart-pie"></i> Sales by Product Line</h3>
           <div class="chart-content">
@@ -824,11 +812,9 @@
           <h3><i class="fas fa-chart-line"></i> Time Series Sales</h3>
           <canvas id="timeSeriesChart"></canvas>
         </div>
-        
       </div>
-      
     </div>
-    
+
     <button class="chatbot-toggle" id="chatbotToggle">
       <i class="fas fa-robot"></i>
     </button>
@@ -913,8 +899,7 @@
 
     <script>
       class AnalyticsDashboard {
-        constructor() {
-          this.data = null;
+       constructor() {
           this.charts = {};
           this.initializeElements();
           this.bindEvents();
@@ -924,11 +909,6 @@
         initializeElements() {
           this.noDataScreen = document.getElementById("noDataScreen");
           this.dashboardContent = document.getElementById("dashboardContent");
-          this.dataInfo = document.getElementById("dataInfo");
-          this.dataTable = document.getElementById("dataTable");
-          this.tableHeader = document.getElementById("tableHeader");
-          this.tableBody = document.getElementById("tableBody");
-
           this.loadDataBtn = document.getElementById("loadDataBtn");
           this.initializeBtn = document.getElementById("initializeBtn");
           this.modelSelect = document.getElementById("modelSelect");
@@ -1081,25 +1061,13 @@
         }
 
         displayDashboardData(data, dataInfo) {
-          // Update stat cards
-          this.statElements.totalSales.textContent = `$${dataInfo.total_sales.toLocaleString(
-            undefined,
-            { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-          )}`;
-          this.statElements.totalTransactions.textContent =
-            dataInfo.total_transactions.toLocaleString();
-          this.statElements.avgSalesPerDay.textContent = `$${dataInfo.avg_sales_per_day.toLocaleString(
-            { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-          )}`;
-          this.statElements.avgRating.textContent =
-            dataInfo.avg_rating.toFixed(2);
-          this.dataInfo.textContent = `(${dataInfo.rows} rows × ${dataInfo.columns} columns)`;
+          this.statElements.totalSales.textContent = `$${dataInfo.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          this.statElements.totalTransactions.textContent = dataInfo.total_transactions.toLocaleString();
+          this.statElements.avgSalesPerDay.textContent = `$${dataInfo.avg_sales_per_day.toLocaleString({ minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          this.statElements.avgRating.textContent = dataInfo.avg_rating.toFixed(2);
 
-          // Display column names
-          const columnNamesContainer = document.getElementById(
-            "columnNamesContainer"
-          );
-          columnNamesContainer.innerHTML = ""; // Clear previous content
+          const columnNamesContainer = document.getElementById("columnNamesContainer");
+          columnNamesContainer.innerHTML = "";
 
           if (dataInfo.column_names && dataInfo.column_names.length > 0) {
             dataInfo.column_names.forEach((column) => {
@@ -1108,181 +1076,28 @@
               pill.textContent = column;
               columnNamesContainer.appendChild(pill);
             });
-          } else if (data.length > 0) {
-            const columns = Object.keys(data[0]);
-            columns.forEach((column) => {
-              const pill = document.createElement("div");
-              pill.className = "column-pill";
-              pill.textContent = column;
-              columnNamesContainer.appendChild(pill);
-            });
-          } else {
-            columnNamesContainer.innerHTML =
-              "<p style='color:#aaa'>No columns to display</p>";
-          }
-
-          // Populate table
-          if (data.length > 0) {
-            const headers = Object.keys(data[0]);
-            this.tableHeader.innerHTML =
-              "<tr>" + headers.map((h) => `<th>${h}</th>`).join("") + "</tr>";
-            this.tableBody.innerHTML = data
-              .map(
-                (row) =>
-                  "<tr>" +
-                  headers.map((h) => `<td>${row[h]}</td>`).join("") +
-                  "</tr>"
-              )
-              .join("");
-          } else {
-            this.tableHeader.innerHTML = "";
-            this.tableBody.innerHTML =
-              "<tr><td colspan='17'>No data available.</td></tr>";
           }
         }
 
-        // This function will now serve as a fallback or for initial display if no data is loaded
         generateSampleDashboard() {
-          this.statElements.totalSales.textContent = "$32266,9.75";
+          this.statElements.totalSales.textContent = "$32266.75";
           this.statElements.totalTransactions.textContent = "1,000";
-          this.statElements.avgTransaction.textContent = "$322.97";
+          this.statElements.avgSalesPerDay.textContent = "$322.97";
           this.statElements.avgRating.textContent = "6.97";
-          this.dataInfo.textContent = "(1000 rows × 17 columns)";
 
-          // Example sample headers
-          const headers = [
-            "Invoice ID",
-            "Branch",
-            "City",
-            "Customer Type",
-            "Gender",
-            "Product Line",
-            "Unit Price",
-            "Quantity",
-            "Tax 5%",
-            "Total",
-            "Date",
-            "Time",
-            "Payment",
-            "COGS",
-            "Gross Margin Percentage",
-            "Gross Income",
-            "Rating",
-          ];
-          document.getElementById("columnNamesDisplay").textContent =
-            "Columns: " + headers.join(", ");
+          const columnNamesContainer = document.getElementById("columnNamesContainer");
+          const headers = ["Invoice ID", "Branch", "City", "Customer Type", "Gender", "Product Line", "Unit Price", "Quantity", "Tax 5%", "Total", "Date", "Time", "Payment", "COGS", "Gross Margin Percentage", "Gross Income", "Rating"];
 
-          const rows = [
-            [
-              "750-67-8428",
-              "A",
-              "Yangon",
-              "Member",
-              "Female",
-              "Health and beauty",
-              "74.69",
-              "7",
-              "26.14",
-              "548.97",
-              "1/5/2019",
-              "13:08",
-              "Ewallet",
-              "522.83",
-              "4.76",
-              "26.14",
-              "9.1",
-            ],
-            [
-              "631-41-3108",
-              "A",
-              "Yangon",
-              "Normal",
-              "Male",
-              "Home and lifestyle",
-              "46.33",
-              "7",
-              "16.2155",
-              "340.5255",
-              "3/3/2019",
-              "13:23",
-              "Credit card",
-              "324.31",
-              "4.761904762",
-              "16.2155",
-              "7.4",
-            ],
-            [
-              "123-19-1176",
-              "A",
-              "Yangon",
-              "Member",
-              "Male",
-              "Health and beauty",
-              "58.22",
-              "8",
-              "23.288",
-              "489.048",
-              "1/27/2019",
-              "20:33",
-              "Ewallet",
-              "465.76",
-              "4.761904762",
-              "23.288",
-              "8.4",
-            ],
-            [
-              "373-73-7910",
-              "A",
-              "Yangon",
-              "Normal",
-              "Male",
-              "Sports and travel",
-              "86.31",
-              "7",
-              "30.2085",
-              "634.3785",
-              "2/8/2019",
-              "10:37",
-              "Ewallet",
-              "604.17",
-              "4.761904762",
-              "30.2085",
-              "5.3",
-            ],
-            [
-              "226-31-3081",
-              "C",
-              "Naypyitaw",
-              "Normal",
-              "Female",
-              "Electronic accessories",
-              "15.28",
-              "5",
-              "3.82",
-              "80.22",
-              "3/8/2019",
-              "10:29",
-              "Cash",
-              "76.4",
-              "4.76",
-              "3.82",
-              "9.6",
-            ],
-          ];
-
-          this.tableHeader.innerHTML =
-            "<tr>" + headers.map((h) => `<th>${h}</th>`).join("") + "</tr>";
-          this.tableBody.innerHTML = rows
-            .map(
-              (row) =>
-                "<tr>" +
-                row.map((cell) => `<td>${cell}</td>`).join("") +
-                "</tr>"
-            )
-            .join("");
-          this.createCharts(true); // Pass true to indicate sample data for charts
+          columnNamesContainer.innerHTML = "";
+          headers.forEach((column) => {
+            const pill = document.createElement("div");
+            pill.className = "column-pill";
+            pill.textContent = column;
+            columnNamesContainer.appendChild(pill);
+          });
         }
-        
+
+
         async createCharts(isSample = false) {
           if (this.charts.product) this.charts.product.destroy();
           if (this.charts.city) this.charts.city.destroy();
