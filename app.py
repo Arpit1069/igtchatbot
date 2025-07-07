@@ -47,7 +47,7 @@ def get_llm(model_choice):
         credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         if not credentials_path:
             raise ValueError("Google credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS in your .env file.")
-        return VertexAI(model_name="gemini-1.0-pro", temperature=0, location="us-east4")
+        return VertexAI(model_name="gemini-2.5-flash", temperature=0.7, location="us-east4")
     
     elif model_choice == "Gemini":
         api_key = os.environ.get("GOOGLE_API_KEY")
@@ -183,7 +183,7 @@ def index():
 def api_load_data():
     global df, df_kpis
     try:
-        df = pd.read_csv("supermarket_sales_final.csv")
+        df = pd.read_csv("supermarket_sales_final_updated.csv")
         df_kpis = pd.read_excel("Lane_KPIs.xlsx")
 
         df['Date'] = pd.to_datetime(df['Date'])

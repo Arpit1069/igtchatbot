@@ -724,12 +724,12 @@
             </div>
 
             <div class="control-group">
-              <label>Branch</label>
+              <label>City</label>
               <select id="branchSelect" class="select">
-                <option value="">All Branches</option>
-                <option value="A">Branch A</option>
-                <option value="B">Branch B</option>
-                <option value="C">Branch C</option>
+                <option value="">All Cities</option>
+                <option value="Yangon">Yangon</option>
+                <option value="Mandalay">Mandalay</option>
+                <option value="Naypyitaw">Naypyitaw</option>
               </select>
             </div>
 
@@ -790,7 +790,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="chart-container">
           <h3><i class="fas fa-chart-pie"></i> Sales by Product Line</h3>
           <div class="chart-content">
@@ -899,7 +899,7 @@
 
     <script>
       class AnalyticsDashboard {
-       constructor() {
+        constructor() {
           this.charts = {};
           this.initializeElements();
           this.bindEvents();
@@ -1061,12 +1061,21 @@
         }
 
         displayDashboardData(data, dataInfo) {
-          this.statElements.totalSales.textContent = `$${dataInfo.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          this.statElements.totalTransactions.textContent = dataInfo.total_transactions.toLocaleString();
-          this.statElements.avgSalesPerDay.textContent = `$${dataInfo.avg_sales_per_day.toLocaleString({ minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          this.statElements.avgRating.textContent = dataInfo.avg_rating.toFixed(2);
+          this.statElements.totalSales.textContent = `$${dataInfo.total_sales.toLocaleString(
+            undefined,
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+          )}`;
+          this.statElements.totalTransactions.textContent =
+            dataInfo.total_transactions.toLocaleString();
+          this.statElements.avgSalesPerDay.textContent = `$${dataInfo.avg_sales_per_day.toLocaleString(
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+          )}`;
+          this.statElements.avgRating.textContent =
+            dataInfo.avg_rating.toFixed(2);
 
-          const columnNamesContainer = document.getElementById("columnNamesContainer");
+          const columnNamesContainer = document.getElementById(
+            "columnNamesContainer"
+          );
           columnNamesContainer.innerHTML = "";
 
           if (dataInfo.column_names && dataInfo.column_names.length > 0) {
@@ -1085,8 +1094,28 @@
           this.statElements.avgSalesPerDay.textContent = "$322.97";
           this.statElements.avgRating.textContent = "6.97";
 
-          const columnNamesContainer = document.getElementById("columnNamesContainer");
-          const headers = ["Invoice ID", "Branch", "City", "Customer Type", "Gender", "Product Line", "Unit Price", "Quantity", "Tax 5%", "Total", "Date", "Time", "Payment", "COGS", "Gross Margin Percentage", "Gross Income", "Rating"];
+          const columnNamesContainer = document.getElementById(
+            "columnNamesContainer"
+          );
+          const headers = [
+            "Invoice ID",
+            "Branch",
+            "City",
+            "Customer Type",
+            "Gender",
+            "Product Line",
+            "Unit Price",
+            "Quantity",
+            "Tax 5%",
+            "Total",
+            "Date",
+            "Time",
+            "Payment",
+            "COGS",
+            "Gross Margin Percentage",
+            "Gross Income",
+            "Rating",
+          ];
 
           columnNamesContainer.innerHTML = "";
           headers.forEach((column) => {
@@ -1096,7 +1125,6 @@
             columnNamesContainer.appendChild(pill);
           });
         }
-
 
         async createCharts(isSample = false) {
           if (this.charts.product) this.charts.product.destroy();
@@ -1495,7 +1523,7 @@
         const payment = document.getElementById("paymentSelect").value;
 
         let query = `Show me ${metric.toLowerCase()} by ${dimension.toLowerCase()} for ${time.toLowerCase()}`;
-        if (branch) query += ` in Branch ${branch}`;
+        if (branch) query += ` in ${branch}`;
         if (payment) query += ` using ${payment}`;
 
         const previewElement = document.getElementById("previewQuery");
